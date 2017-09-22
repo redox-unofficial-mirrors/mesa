@@ -70,7 +70,7 @@
 #endif
 
 #elif defined(__NetBSD__) || defined(__FreeBSD__) || \
-      defined(__DragonFly__)
+      defined(__DragonFly__) || defined(__redox__)
 #include <sys/types.h>
 #include <machine/endian.h>
 

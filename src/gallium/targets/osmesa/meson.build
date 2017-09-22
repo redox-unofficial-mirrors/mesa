@@ -39,7 +39,7 @@ osmesa_def = custom_target(
   command : gen_vs_module_defs_normal_command,
 )
 
-libosmesa = shared_library(
+libosmesa = library(
   osmesa_lib_name,
   'target.c',
   gnu_symbol_visibility : 'hidden',

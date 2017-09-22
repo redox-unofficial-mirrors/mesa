@@ -697,7 +697,7 @@ dd_dump_call(FILE *f, struct dd_draw_state *state, struct dd_call *call)
 static void
 dd_kill_process(void)
 {
-#ifdef PIPE_OS_UNIX
+#if defined(PIPE_OS_UNIX) && !defined(PIPE_OS_REDOX)
    sync();
 #endif
    fprintf(stderr, "dd: Aborting the process...\n");

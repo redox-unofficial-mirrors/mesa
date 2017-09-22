@@ -36,6 +36,7 @@
 #include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "util/detect_os.h"
 
@@ -73,7 +74,7 @@ static boolean huds_visible = TRUE;
 static int hud_scale = 1;
 
 
-#ifdef PIPE_OS_UNIX
+#if defined(PIPE_OS_UNIX) && !defined(PIPE_OS_REDOX)
 static void
 signal_visible_handler(int sig, siginfo_t *siginfo, void *context)
 {
@@ -1953,7 +1954,7 @@ hud_create(struct cso_context *cso, struct st_context_iface *st,
    list_inithead(&hud->pane_list);
 
    /* setup sig handler once for all hud contexts */
-#ifdef PIPE_OS_UNIX
+#if defined(PIPE_OS_UNIX) && !defined(PIPE_OS_REDOX)
    if (!sig_handled && signo != 0) {
       action.sa_sigaction = &signal_visible_handler;
       action.sa_flags = SA_SIGINFO;

@@ -192,4 +192,8 @@
 #define PIPE_OS_CYGWIN
 #endif
 
+#if DETECT_OS_REDOX
+#define PIPE_OS_REDOX
+#endif
+
 #endif /* P_CONFIG_H_ */

@@ -27,6 +27,8 @@
 
 #include <stdlib.h>
 
+#if !defined(__redox__)
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -86,3 +88,5 @@ u_memstream_close(struct u_memstream *mem)
 
    fclose(f);
 }
+
+#endif

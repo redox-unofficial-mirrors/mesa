@@ -27,8 +27,6 @@
 
 #include <stdlib.h>
 
-#if !defined(__redox__)
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -57,6 +55,9 @@ u_memstream_open(struct u_memstream *mem, char **bufp, size_t *sizep)
    }
 
    return success;
+#elif defined(__redox__)
+    //TODO: open_memstream on Redox
+    return false;
 #else
    FILE *const f = open_memstream(bufp, sizep);
    mem->f = f;
@@ -88,5 +89,3 @@ u_memstream_close(struct u_memstream *mem)
 
    fclose(f);
 }
-
-#endif

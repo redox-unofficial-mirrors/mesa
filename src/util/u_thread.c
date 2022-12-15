@@ -154,7 +154,7 @@ util_set_thread_affinity(thrd_t thread,
 int64_t
 util_thread_get_time_nano(thrd_t thread)
 {
-#if defined(HAVE_PTHREAD) && !defined(__APPLE__) && !defined(__HAIKU__)
+#if defined(HAVE_PTHREAD) && !defined(__APPLE__) && !defined(__HAIKU__) && !defined(__redox__)
    struct timespec ts;
    clockid_t cid;
 

@@ -70,6 +70,10 @@
 /**
  * Static (compile-time) assertion.
  */
+#if !defined(__cplusplus)
+# undef static_assert
+# define static_assert _Static_assert
+#endif
 #define STATIC_ASSERT(cond) do { \
    static_assert(cond, #cond); \
 } while (0)

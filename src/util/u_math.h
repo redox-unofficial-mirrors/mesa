@@ -53,6 +53,10 @@ extern "C" {
 #endif
 
 
+#ifndef M_LOG2E
+#define M_LOG2E 1.4426950408889634074
+#endif
+
 #ifndef M_SQRT2
 #define M_SQRT2 1.41421356237309504880
 #endif

@@ -53,7 +53,7 @@
 #include "frontend/sw_winsys.h"
 #include "git_sha1.h"
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__redox__)
 #include "drm-uapi/drm_fourcc.h"
 #endif
 
@@ -1122,7 +1122,7 @@ llvmpipe_resource_get_param(struct pipe_screen *screen,
    case PIPE_RESOURCE_PARAM_LAYER_STRIDE:
       *value = lpr->img_stride[level];
       return true;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__redox__)
    case PIPE_RESOURCE_PARAM_MODIFIER:
       *value = DRM_FORMAT_MOD_INVALID;
       return true;

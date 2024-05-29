@@ -316,7 +316,6 @@ os_get_total_physical_memory(uint64_t *size)
    *size = 4294967296ULL;
    return true;
 #else
-#else
 #error unexpected platform in os_misc.c
    return false;
 #endif

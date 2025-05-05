@@ -45,11 +45,13 @@
 #include <X11/Xlib.h>
 #include <X11/Xlibint.h>
 #include <X11/Xutil.h>
+#if !defined(__redox__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
 DEBUG_GET_ONCE_BOOL_OPTION(xlib_no_shm, "XLIB_NO_SHM", false)
+#endif
 
 /**
  * Display target for Xlib winsys.
@@ -75,8 +77,10 @@ struct xlib_displaytarget
     */
    Drawable drawable;
 
+#if !defined(__redox__)
    XShmSegmentInfo shminfo;
    Bool shm;  /** Using shared memory images? */
+#endif
 };
 
 
@@ -118,6 +122,7 @@ handle_xerror(Display *dpy, XErrorEvent *event)
 }
 
 
+#if !defined(__redox__)
 static char *
 alloc_shm(struct xlib_displaytarget *buf, unsigned size)
 {
@@ -198,6 +203,7 @@ alloc_shm_ximage(struct xlib_displaytarget *xlib_dt,
 
    xlib_dt->shm = True;
 }
+#endif
 
 
 static void
@@ -205,12 +211,14 @@ alloc_ximage(struct xlib_displaytarget *xlib_dt,
              struct xlib_drawable *xmb,
              unsigned width, unsigned height)
 {
+#if !defined(__redox__)
    /* try allocating a shared memory image first */
    if (xlib_dt->shm) {
       alloc_shm_ximage(xlib_dt, xmb, width, height);
       if (xlib_dt->tempImage)
          return; /* success */
    }
+#endif
 
    /* try regular (non-shared memory) image */
    xlib_dt->tempImage = XCreateImage(xlib_dt->display,
@@ -258,6 +266,7 @@ xlib_displaytarget_destroy(struct sw_winsys *ws,
    struct xlib_displaytarget *xlib_dt = xlib_displaytarget(dt);
 
    if (xlib_dt->data) {
+#if !defined(__redox__)
       if (xlib_dt->shminfo.shmid >= 0) {
          shmdt(xlib_dt->shminfo.shmaddr);
          shmctl(xlib_dt->shminfo.shmid, IPC_RMID, 0);
@@ -269,7 +278,9 @@ xlib_displaytarget_destroy(struct sw_winsys *ws,
          if (xlib_dt->tempImage)
             xlib_dt->tempImage->data = NULL;
       }
-      else {
+      else
+#endif
+      {
          align_free(xlib_dt->data);
          if (xlib_dt->tempImage && xlib_dt->tempImage->data == xlib_dt->data) {
             xlib_dt->tempImage->data = NULL;
@@ -349,6 +360,7 @@ xlib_sw_display(struct xlib_drawable *xlib_drawable,
       XSetFunction(display, xlib_dt->gc, GXcopy);
    }
 
+#if !defined(__redox__)
    if (xlib_dt->shm) {
       ximage = xlib_dt->tempImage;
       ximage->data = xlib_dt->data;
@@ -358,7 +370,9 @@ xlib_sw_display(struct xlib_drawable *xlib_drawable,
                    ximage, box->x, box->y, box->x, box->y,
                    box->width, box->height, False);
    }
-   else {
+   else
+#endif
+   {
       /* display image in Window */
       ximage = xlib_dt->tempImage;
       ximage->data = xlib_dt->data;
@@ -423,6 +437,7 @@ xlib_displaytarget_create(struct sw_winsys *winsys,
    xlib_dt->stride = align(util_format_get_stride(format, width), alignment);
    size = xlib_dt->stride * nblocksy;
 
+#if !defined(__redox__)
    if (!debug_get_option_xlib_no_shm() &&
        XQueryExtension(xlib_dt->display, "MIT-SHM", &ignore, &ignore, &ignore)) {
       xlib_dt->data = alloc_shm(xlib_dt, size);
@@ -430,6 +445,7 @@ xlib_displaytarget_create(struct sw_winsys *winsys,
          xlib_dt->shm = True;
       }
    }
+#endif
 
    if (!xlib_dt->data) {
       xlib_dt->data = align_malloc(size, alignment);

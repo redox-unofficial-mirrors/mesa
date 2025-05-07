@@ -1175,9 +1175,7 @@ glXMakeContextCurrent( Display *dpy, GLXDrawable draw,
                        GLXDrawable read, GLXContext ctx )
 {
    GLXContext glxCtx = ctx;
-   printf("%s:%d\n", __FILE__, __LINE__);
    GLXContext current = GetCurrentContext();
-   printf("%s:%d\n", __FILE__, __LINE__);
    static bool firsttime = 1, no_rast = 0;
 
    if (firsttime) {
@@ -1185,28 +1183,20 @@ glXMakeContextCurrent( Display *dpy, GLXDrawable draw,
       firsttime = 0;
    }
 
-   printf("%s:%d\n", __FILE__, __LINE__);
    if (ctx) {
       XMesaBuffer drawBuffer = NULL, readBuffer = NULL;
-      printf("%s:%d\n", __FILE__, __LINE__);
       XMesaContext xmctx = glxCtx->xmesaContext;
-      printf("%s:%d\n", __FILE__, __LINE__);
 
       /* either both must be null, or both must be non-null */
       if (!draw != !read)
          return False;
 
-      printf("%s:%d\n", __FILE__, __LINE__);
       if (draw) {
          /* Find the XMesaBuffer which corresponds to 'draw' */
-         printf("%s:%d\n", __FILE__, __LINE__);
          drawBuffer = XMesaFindBuffer( dpy, draw );
-         printf("%s:%d\n", __FILE__, __LINE__);
          if (!drawBuffer) {
             /* drawable must be a new window! */
-            printf("%s:%d\n", __FILE__, __LINE__);
             drawBuffer = XMesaCreateWindowBuffer( xmctx->xm_visual, draw );
-            printf("%s:%d\n", __FILE__, __LINE__);
             if (!drawBuffer) {
                /* Out of memory, or context/drawable depth mismatch */
                return False;
@@ -1216,57 +1206,40 @@ glXMakeContextCurrent( Display *dpy, GLXDrawable draw,
 
       if (read) {
          /* Find the XMesaBuffer which corresponds to 'read' */
-         printf("%s:%d\n", __FILE__, __LINE__);
          readBuffer = XMesaFindBuffer( dpy, read );
-         printf("%s:%d\n", __FILE__, __LINE__);
          if (!readBuffer) {
             /* drawable must be a new window! */
-            printf("%s:%d\n", __FILE__, __LINE__);
             readBuffer = XMesaCreateWindowBuffer( xmctx->xm_visual, read );
-            printf("%s:%d\n", __FILE__, __LINE__);
             if (!readBuffer) {
                /* Out of memory, or context/drawable depth mismatch */
-               printf("%s:%d\n", __FILE__, __LINE__);
                return False;
             }
          }
-         printf("%s:%d\n", __FILE__, __LINE__);
       }
 
-      printf("%s:%d\n", __FILE__, __LINE__);
-      if (no_rast && current == ctx) {
-         printf("%s:%d\n", __FILE__, __LINE__);
+      if (no_rast && current == ctx)
          return True;
-      }
 
       /* Now make current! */
-      printf("%s:%d\n", __FILE__, __LINE__);
       if (XMesaMakeCurrent2(xmctx, drawBuffer, readBuffer)) {
-         printf("%s:%d\n", __FILE__, __LINE__);
          ctx->currentDpy = dpy;
          ctx->currentDrawable = draw;
          ctx->currentReadable = read;
          SetCurrentContext(ctx);
-         printf("%s:%d\n", __FILE__, __LINE__);
          return True;
       }
       else {
-         printf("%s:%d\n", __FILE__, __LINE__);
          return False;
       }
    }
    else if (!ctx && !draw && !read) {
-      printf("%s:%d\n", __FILE__, __LINE__);
       /* release current context w/out assigning new one. */
       XMesaMakeCurrent2( NULL, NULL, NULL );
-      printf("%s:%d\n", __FILE__, __LINE__);
       SetCurrentContext(NULL);
-      printf("%s:%d\n", __FILE__, __LINE__);
       return True;
    }
    else {
       /* We were given an invalid set of arguments */
-      printf("%s:%d\n", __FILE__, __LINE__);
       return False;
    }
 }
@@ -1275,7 +1248,6 @@ glXMakeContextCurrent( Display *dpy, GLXDrawable draw,
 PUBLIC Bool
 glXMakeCurrent( Display *dpy, GLXDrawable drawable, GLXContext ctx )
 {
-   printf("%s:%d\n", __FILE__, __LINE__);
    return glXMakeContextCurrent( dpy, drawable, drawable, ctx );
 }
 

@@ -540,7 +540,7 @@ if with_glvnd
   if with_platform_windows
     error('glvnd cannot be used on Windows')
   elif with_glx == 'xlib'
-    #error('Cannot build glvnd support for GLX that is not DRI based.')
+    error('Cannot build glvnd support for GLX that is not DRI based.')
   elif with_glx == 'disabled' and not with_egl
     error('glvnd requires DRI based GLX and/or EGL')
   endif
@@ -2015,7 +2015,7 @@ dep_xcb_dri2 = null_dep
 dep_xcb_dri3 = null_dep
 dep_dri2proto = null_dep
 dep_glproto = null_dep
-dep_xxf86vm = null_dep
+dep_xxf86vm = dependency('xxf86vm')
 dep_xcb_dri3 = null_dep
 dep_xcb_present = null_dep
 dep_xcb_sync = null_dep
@@ -2157,7 +2157,7 @@ add_project_arguments(c_cpp_args, language : ['c', 'cpp'])
 add_project_arguments(c_args,   language : ['c'])
 add_project_arguments(cpp_args, language : ['cpp'])
 
-gl_priv_reqs = []
+gl_priv_reqs = ['xxf86vm']
 
 if with_glx == 'xlib'
   gl_priv_reqs += ['x11', 'xext', 'xcb']

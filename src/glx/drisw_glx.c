@@ -406,14 +406,18 @@ static const __DRIextension *loader_extensions_noshm[] = {
    NULL
 };
 
+#if !defined(__redox__)
 extern const __DRIuseInvalidateExtension dri2UseInvalidate;
 extern const __DRIbackgroundCallableExtension driBackgroundCallable;
+#endif
 
 static const __DRIextension *kopper_extensions_noshm[] = {
    &swrastLoaderExtension.base,
    &kopperLoaderExtension.base,
+#if !defined(__redox__)
    &dri2UseInvalidate.base,
    &driBackgroundCallable.base,
+#endif
    NULL
 };
 
@@ -999,7 +1003,11 @@ driswCreateScreenDriver(int screen, struct glx_display *priv,
 
    if (pdpyp->zink) {
       bool err;
+      #if defined(__redox__)
+      psc->has_multibuffer = false;
+      #else
       psc->has_multibuffer = dri3_check_multibuffer(priv->dpy, &err);
+      #endif
       if (!psc->has_multibuffer &&
           !debug_get_bool_option("LIBGL_ALWAYS_SOFTWARE", false) &&
           !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)) {

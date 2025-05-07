@@ -176,6 +176,7 @@ MakeContextCurrent(Display * dpy, GLXDrawable draw,
 _GLX_PUBLIC Bool
 glXMakeCurrent(Display * dpy, GLXDrawable draw, GLXContext gc)
 {
+   printf("%s:%d\n", __FILE__, __LINE__);
    return MakeContextCurrent(dpy, draw, draw, gc, X_GLXMakeCurrent);
 }
 
@@ -183,6 +184,7 @@ _GLX_PUBLIC Bool
 glXMakeContextCurrent(Display *dpy, GLXDrawable d, GLXDrawable r,
                       GLXContext ctx)
 {
+   printf("%s:%d\n", __FILE__, __LINE__);
    return MakeContextCurrent(dpy, d, r, ctx, X_GLXMakeContextCurrent);
 }
 

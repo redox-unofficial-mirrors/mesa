@@ -2015,7 +2015,7 @@ dep_xcb_dri2 = null_dep
 dep_xcb_dri3 = null_dep
 dep_dri2proto = null_dep
 dep_glproto = null_dep
-dep_xxf86vm = dependency('xxf86vm')
+dep_xxf86vm = null_dep
 dep_xcb_dri3 = null_dep
 dep_xcb_present = null_dep
 dep_xcb_sync = null_dep
@@ -2086,11 +2086,9 @@ if with_platform_x11
     dep_glproto = dependency('glproto', version : '>= 1.4.14')
   endif
   if with_glx == 'dri'
+    dep_xxf86vm = dependency('xxf86vm')
     if with_dri_platform == 'drm'
       dep_dri2proto = dependency('dri2proto', version : '>= 2.8')
-      if with_glx_direct
-        dep_xxf86vm = dependency('xxf86vm')
-      endif
     endif
   endif
   if (with_egl or
@@ -2157,19 +2155,16 @@ add_project_arguments(c_cpp_args, language : ['c', 'cpp'])
 add_project_arguments(c_args,   language : ['c'])
 add_project_arguments(cpp_args, language : ['cpp'])
 
-gl_priv_reqs = ['xxf86vm']
+gl_priv_reqs = []
 
 if with_glx == 'xlib'
   gl_priv_reqs += ['x11', 'xext', 'xcb']
 elif with_glx == 'dri'
   gl_priv_reqs += [
     'x11', 'xext', 'xfixes', 'x11-xcb', 'xcb',
-    'xcb-glx >= 1.8.1']
+    'xcb-glx >= 1.8.1', 'xxf86vm']
   if with_dri_platform == 'drm'
     gl_priv_reqs += 'xcb-dri2 >= 1.8'
-    if with_glx_direct
-      gl_priv_reqs += 'xxf86vm'
-    endif
   endif
 endif
 if dep_libdrm.found()

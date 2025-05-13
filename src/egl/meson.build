@@ -107,8 +107,11 @@ if with_dri2
 
   files_egl += files(
     'drivers/dri2/platform_device.c',
-    'drivers/dri2/platform_surfaceless.c',
   )
+
+  if host_machine.system() != 'redox'
+    files_egl += 'drivers/dri2/platform_surfaceless.c'
+  endif
 
   if with_platform_x11
     files_egl += files('drivers/dri2/platform_x11.c')

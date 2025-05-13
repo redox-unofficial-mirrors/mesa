@@ -1151,7 +1151,9 @@ dri2_initialize(_EGLDisplay *disp)
 
    switch (disp->Platform) {
    case _EGL_PLATFORM_SURFACELESS:
+   #if !defined(__redox__)
       ret = dri2_initialize_surfaceless(disp);
+   #endif
       break;
    case _EGL_PLATFORM_DEVICE:
       ret = dri2_initialize_device(disp);
@@ -1676,7 +1678,7 @@ dri2_create_drawable(struct dri2_egl_display *dri2_dpy,
       dri2_surf->dri_drawable = dri2_dpy->kopper->createNewDrawable(
          dri2_dpy->dri_screen_render_gpu, config, loaderPrivate,
          &(__DRIkopperDrawableInfo){
-#ifdef HAVE_X11_PLATFORM
+#if defined(HAVE_X11_PLATFORM) && defined(HAVE_DRI3)
             .multiplanes_available = dri2_dpy->multibuffers_available,
 #endif
             .is_pixmap = dri2_surf->base.Type == EGL_PBUFFER_BIT ||

@@ -1212,6 +1212,7 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(display);
 
+#ifdef HAVE_DRI3
    loader_update_screen_resources(&dri2_dpy->screen_resources);
 
    if (dri2_dpy->screen_resources.num_crtcs == 0) {
@@ -1228,6 +1229,7 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
    /* If there's only one active CRTC, we're done */
    if (dri2_dpy->screen_resources.num_crtcs == 1)
       return EGL_TRUE;
+#endif
 
    /* In a multi-monitor setup, look at each CRTC and perform a box
     * intersection between the CRTC and surface.  Use the CRTC whose
@@ -1250,6 +1252,7 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
       return EGL_FALSE;
    }
 
+#ifdef HAVE_DRI3
    int area = 0;
 
    for (unsigned c = 0; c < dri2_dpy->screen_resources.num_crtcs; c++) {
@@ -1264,6 +1267,7 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
          area = c_area;
       }
    }
+#endif
 
    /* If the window is entirely off-screen, then area will still be 0.
     * We defaulted to the first CRTC in the list's refresh rate, earlier.
@@ -1517,10 +1521,12 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
     * here will allow is to simply free the memory at dri2_terminate().
     */
    dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
+#ifdef HAVE_DRI3
    if (disp->Options.Zink &&
        !debug_get_bool_option("LIBGL_DRI3_DISABLE", false) &&
        !debug_get_bool_option("LIBGL_KOPPER_DRI2", false))
       dri3_x11_connect(dri2_dpy);
+#endif
    if (!dri2_load_driver_swrast(disp))
       goto cleanup;
 
@@ -1554,8 +1560,10 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
       disp->Extensions.EXT_buffer_age = EGL_TRUE;
       disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
 
+#ifdef HAVE_DRI3
       if (dri2_dpy->multibuffers_available)
          dri2_set_WL_bind_wayland_display(disp);
+#endif
    } else {
       /* swrast */
       disp->Extensions.ANGLE_sync_control_rate = EGL_TRUE;
@@ -1782,8 +1790,10 @@ dri2_initialize_x11(_EGLDisplay *disp)
 void
 dri2_teardown_x11(struct dri2_egl_display *dri2_dpy)
 {
+#ifdef HAVE_DRI3
    if (dri2_dpy->dri2_major >= 3)
       loader_destroy_screen_resources(&dri2_dpy->screen_resources);
+#endif
 
    if (dri2_dpy->own_device)
       xcb_disconnect(dri2_dpy->conn);

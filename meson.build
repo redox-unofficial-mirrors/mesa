@@ -452,7 +452,9 @@ with_egl = get_option('egl') \
   .allowed()
 
 if with_egl
-  _platforms += 'surfaceless'
+  if host_machine.system() != 'redox'
+    _platforms += 'surfaceless'
+  endif
   if with_gbm and not with_platform_android
     _platforms += 'drm'
   endif
@@ -553,9 +555,9 @@ if with_vulkan_icd_dir == ''
   with_vulkan_icd_dir = join_paths(get_option('datadir'), 'vulkan/icd.d')
 endif
 
-# GNU/Hurd includes egl_dri2, without drm.
+# GNU/Hurd and Redox includes egl_dri2, without drm.
 with_dri2 = (with_dri or with_any_vk) and (with_dri_platform == 'drm' or
-  host_machine.system() == 'gnu')
+  ['gnu', 'redox'].contains(host_machine.system()))
 with_dri3 = get_option('dri3').disable_auto_if(not (system_has_kms_drm and with_dri2)).allowed()
 
 if with_any_vk and (with_platform_x11 and not with_dri3)

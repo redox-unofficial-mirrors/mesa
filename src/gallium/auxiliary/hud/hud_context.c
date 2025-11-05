@@ -80,7 +80,7 @@ static int hud_scale = HUD_DEFAULT_SCALE;
 static int hud_rotate = HUD_DEFAULT_ROTATION;
 static float hud_opacity = HUD_DEFAULT_OPACITY / 100.0f;
 
-#if DETECT_OS_UNIX && !defined(DETECT_OS_REDOX)
+#if DETECT_OS_UNIX
 static void
 signal_visible_handler(int sig, siginfo_t *siginfo, void *context)
 {

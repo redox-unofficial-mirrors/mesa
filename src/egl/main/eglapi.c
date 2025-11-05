@@ -445,6 +445,12 @@ _eglGetPlatformDisplayCommon(EGLenum platform, void *native_display,
          _eglGetGbmDisplay((struct gbm_device *)native_display, attrib_list);
       break;
 #endif
+#ifdef HAVE_REDOX_PLATFORM
+   case EGL_PLATFORM_REDOX_EXT:
+      disp = _eglGetRedoxDisplay((struct wl_display *)native_display,
+                                   attrib_list);
+      break;
+#endif
 #ifdef HAVE_WAYLAND_PLATFORM
    case EGL_PLATFORM_WAYLAND_EXT:
       disp = _eglGetWaylandDisplay((struct wl_display *)native_display,
@@ -597,6 +603,8 @@ _eglCreateExtensionsString(_EGLDisplay *disp)
    _EGL_CHECK_EXTENSION(NOK_texture_from_pixmap);
 
    _EGL_CHECK_EXTENSION(NV_post_sub_buffer);
+
+   _EGL_CHECK_EXTENSION(REDOX_image_native_buffer);
 
    _EGL_CHECK_EXTENSION(WL_bind_wayland_display);
    _EGL_CHECK_EXTENSION(WL_create_wayland_buffer_from_image);

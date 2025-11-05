@@ -49,6 +49,7 @@ enum _egl_platform_type {
    _EGL_PLATFORM_X11,
    _EGL_PLATFORM_XCB,
    _EGL_PLATFORM_WAYLAND,
+   _EGL_PLATFORM_REDOX,
    _EGL_PLATFORM_DRM,
    _EGL_PLATFORM_ANDROID,
    _EGL_PLATFORM_HAIKU,
@@ -150,6 +151,8 @@ struct _egl_extensions {
    EGLBoolean NOK_texture_from_pixmap;
 
    EGLBoolean NV_post_sub_buffer;
+
+   EGLBoolean REDOX_image_native_buffer;
 
    EGLBoolean WL_bind_wayland_display;
    EGLBoolean WL_create_wayland_buffer_from_image;
@@ -330,6 +333,14 @@ struct gbm_device;
 _EGLDisplay *
 _eglGetGbmDisplay(struct gbm_device *native_display,
                   const EGLAttrib *attrib_list);
+#endif
+
+#ifdef HAVE_REDOX_PLATFORM
+struct wl_display;
+
+_EGLDisplay *
+_eglGetRedoxDisplay(struct wl_display *native_display,
+                      const EGLAttrib *attrib_list);
 #endif
 
 #ifdef HAVE_WAYLAND_PLATFORM

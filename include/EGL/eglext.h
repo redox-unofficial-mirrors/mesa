@@ -902,6 +902,11 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreatePlatformPixmapSurfaceEXT (EGLDisplay dpy,
 #define EGL_PLATFORM_WAYLAND_EXT          0x31D8
 #endif /* EGL_EXT_platform_wayland */
 
+#ifndef EGL_EXT_platform_redox
+#define EGL_EXT_platform_redox 1
+#define EGL_PLATFORM_REDOX_EXT            0x31D9
+#endif /* EGL_EXT_platform_redox */
+
 #ifndef EGL_EXT_platform_x11
 #define EGL_EXT_platform_x11 1
 #define EGL_PLATFORM_X11_EXT              0x31D5
@@ -1455,6 +1460,16 @@ EGLAPI EGLuint64NV EGLAPIENTRY eglGetSystemTimeNV (void);
 #define EGL_QNX_platform_screen 1
 #define EGL_PLATFORM_SCREEN_QNX           0x3550
 #endif /* EGL_QNX_platform_screen */
+
+#ifndef EGL_REDOX_image_native_buffer
+#define EGL_REDOX_image_native_buffer 1
+#define EGL_NATIVE_BUFFER_REDOX           0x3751
+#endif /* EGL_REDOX_image_native_buffer */
+
+#ifndef EGL_REDOX_platform_screen
+#define EGL_REDOX_platform_screen 1
+#define EGL_PLATFORM_SCREEN_REDOX         0x3750
+#endif /* EGL_REDOX_platform_screen */
 
 #ifndef EGL_TIZEN_image_native_buffer
 #define EGL_TIZEN_image_native_buffer 1

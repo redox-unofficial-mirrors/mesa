@@ -31,7 +31,7 @@
 #include "util/ralloc.h"
 #include "util/u_debug.h"
 
-#if DETECT_OS_UNIX && !defined(DETECT_OS_REDOX)
+#if DETECT_OS_UNIX
 #include <syslog.h>
 #include "util/u_process.h"
 #endif
@@ -106,7 +106,7 @@ mesa_log_init_once(void)
    }
 #endif
 
-#if DETECT_OS_UNIX && !defined(DETECT_OS_REDOX)
+#if DETECT_OS_UNIX
    if (mesa_log_control & MESA_LOG_CONTROL_SYSLOG)
       openlog(util_get_process_name(), LOG_NDELAY | LOG_PID, LOG_USER);
 #endif
@@ -232,7 +232,7 @@ logger_file(enum mesa_log_level level,
       free(msg);
 }
 
-#if DETECT_OS_UNIX && !defined(DETECT_OS_REDOX)
+#if DETECT_OS_UNIX
 
 static inline int
 level_to_syslog(enum mesa_log_level l)
@@ -364,7 +364,7 @@ mesa_log_v(enum mesa_log_level level, const char *tag, const char *format,
                   va_list va);
    } loggers[] = {
       { MESA_LOG_CONTROL_FILE, logger_file },
-#if DETECT_OS_UNIX && !defined(DETECT_OS_REDOX)
+#if DETECT_OS_UNIX
       { MESA_LOG_CONTROL_SYSLOG, logger_syslog },
 #endif
 #if DETECT_OS_ANDROID

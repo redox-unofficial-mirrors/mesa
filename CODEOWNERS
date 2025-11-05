@@ -65,6 +65,9 @@ meson.build @dbaker @eric
 /src/egl/wayland/ @daniels @eric
 /src/egl/drivers/dri2/platform_wayland.c @daniels @eric
 
+# EGL - Redox support
+/src/egl/drivers/dri2/platform_redox.c @jackpot51 @willnode
+
 # Gallium targets
 /src/gallium/targets/ @xexaxo
 

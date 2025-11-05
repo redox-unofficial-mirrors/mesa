@@ -330,6 +330,11 @@ struct dri2_egl_surface {
    __DRIbuffer buffers[5];
    bool have_fake_front;
 
+#ifdef HAVE_REDOX_PLATFORM
+   __DRIimage *dri_image_back;
+   void *orb_window;
+#endif
+
 #ifdef HAVE_X11_PLATFORM
    xcb_drawable_t drawable;
    xcb_xfixes_region_t region;
@@ -570,6 +575,17 @@ dri2_initialize_drm(_EGLDisplay *disp)
 static inline void
 dri2_teardown_drm(struct dri2_egl_display *dri2_dpy)
 {
+}
+#endif
+
+#ifdef HAVE_REDOX_PLATFORM
+EGLBoolean
+dri2_initialize_redox(_EGLDisplay *disp);
+#else
+static inline EGLBoolean
+dri2_initialize_redox(_EGLDisplay *disp)
+{
+   return _eglError(EGL_NOT_INITIALIZED, "Redox platform not built");
 }
 #endif
 

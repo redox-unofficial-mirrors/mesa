@@ -276,6 +276,11 @@ EGLAPI EGLBoolean EGLAPIENTRY eglSetDamageRegionKHR (EGLDisplay dpy, EGLSurface 
 #define EGL_PLATFORM_GBM_KHR              0x31D7
 #endif /* EGL_KHR_platform_gbm */
 
+#ifndef EGL_KHR_platform_redox
+#define EGL_KHR_platform_redox 1
+#define EGL_PLATFORM_REDOX_KHR          0x31D9
+#endif /* EGL_KHR_platform_redox */
+
 #ifndef EGL_KHR_platform_wayland
 #define EGL_KHR_platform_wayland 1
 #define EGL_PLATFORM_WAYLAND_KHR          0x31D8

@@ -3013,6 +3013,11 @@
                 <enum name="EGL_PLATFORM_GBM_KHR"/>
             </require>
         </extension>
+        <extension name="EGL_KHR_platform_redox" supported="egl">
+            <require>
+                <enum name="EGL_PLATFORM_REDOX_KHR"/>
+            </require>
+        </extension>
         <extension name="EGL_KHR_platform_wayland" supported="egl">
             <require>
                 <enum name="EGL_PLATFORM_WAYLAND_KHR"/>

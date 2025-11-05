@@ -1158,6 +1158,9 @@ dri2_initialize(_EGLDisplay *disp)
    case _EGL_PLATFORM_DEVICE:
       ret = dri2_initialize_device(disp);
       break;
+   case _EGL_PLATFORM_REDOX:
+      ret = dri2_initialize_redox(disp);
+      break;
    case _EGL_PLATFORM_X11:
    case _EGL_PLATFORM_XCB:
       ret = dri2_initialize_x11(disp);
@@ -1255,6 +1258,9 @@ dri2_display_destroy(_EGLDisplay *disp)
    case _EGL_PLATFORM_DRM:
       dri2_teardown_drm(dri2_dpy);
       break;
+   // case _EGL_PLATFORM_REDOX:
+   //    dri2_teardown_redox(dri2_dpy);
+   //    break;
    case _EGL_PLATFORM_WAYLAND:
       dri2_teardown_wayland(dri2_dpy);
       break;

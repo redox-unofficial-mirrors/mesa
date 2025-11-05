@@ -128,11 +128,11 @@ with_any_opengl = with_opengl or with_gles1 or with_gles2
 # Only build shared_glapi if at least one OpenGL API is enabled
 with_shared_glapi = with_shared_glapi and with_any_opengl
 
-system_has_kms_drm = ['openbsd', 'netbsd', 'freebsd', 'gnu/kfreebsd', 'dragonfly', 'linux', 'sunos', 'android', 'managarm'].contains(host_machine.system())
+system_has_kms_drm = ['openbsd', 'netbsd', 'freebsd', 'gnu/kfreebsd', 'dragonfly', 'linux', 'redox', 'sunos', 'android', 'managarm'].contains(host_machine.system())
 
 gallium_drivers = get_option('gallium-drivers')
 if gallium_drivers.contains('auto')
-  if system_has_kms_drm
+  if system_has_kms_drm and host_machine.system() != 'redox' # need extra libraries
     # TODO: PPC, Sparc
     if ['x86', 'x86_64'].contains(host_machine.cpu_family())
       gallium_drivers = [
@@ -209,7 +209,7 @@ with_gallium_kmsro = system_has_kms_drm and [
 
 _vulkan_drivers = get_option('vulkan-drivers')
 if _vulkan_drivers.contains('auto')
-  if system_has_kms_drm
+  if system_has_kms_drm and host_machine.system() != 'redox'
     if host_machine.cpu_family().startswith('x86')
       _vulkan_drivers = ['amd', 'intel', 'intel_hasvk', 'swrast']
     elif ['arm', 'aarch64'].contains(host_machine.cpu_family())
@@ -377,6 +377,8 @@ if _platforms.contains('auto')
     _platforms = ['x11', 'wayland']
   elif ['darwin', 'cygwin'].contains(host_machine.system())
     _platforms = ['x11']
+  elif ['redox'].contains(host_machine.system())
+    _platforms = ['redox']
   elif ['haiku'].contains(host_machine.system())
     _platforms = ['haiku']
   elif host_machine.system() == 'windows'
@@ -387,6 +389,7 @@ if _platforms.contains('auto')
   endif
 endif
 
+with_platform_redox = _platforms.contains('redox')
 with_platform_android = _platforms.contains('android')
 with_platform_x11 = _platforms.contains('x11')
 with_platform_wayland = _platforms.contains('wayland')
@@ -396,6 +399,8 @@ with_platform_windows = _platforms.contains('windows')
 with_glx = get_option('glx')
 if with_glx == 'auto'
   if not with_opengl
+    with_glx = 'disabled'
+  elif with_platform_redox
     with_glx = 'disabled'
   elif with_platform_android
     with_glx = 'disabled'
@@ -445,16 +450,14 @@ with_xlib_lease = get_option('xlib-lease') \
 
 with_egl = get_option('egl') \
   .require(host_machine.system() != 'darwin', error_message : 'EGL not supported on MacOS') \
-  .require(with_platform_windows or with_platform_haiku or with_dri or with_platform_android, error_message : 'EGL requires DRI, Haiku, Windows or Android') \
+  .require(with_platform_windows or with_platform_haiku or with_dri or with_platform_android or with_platform_redox, error_message : 'EGL requires DRI, Haiku, Windows or Android') \
   .require(with_shared_glapi, error_message : 'EGL requires shared-glapi') \
   .require(with_glx != 'xlib', error_message :'EGL requires DRI, but GLX is being built with xlib support') \
   .disable_auto_if(with_platform_haiku) \
   .allowed()
 
 if with_egl
-  if host_machine.system() != 'redox'
-    _platforms += 'surfaceless'
-  endif
+  _platforms += 'surfaceless'
   if with_gbm and not with_platform_android
     _platforms += 'drm'
   endif

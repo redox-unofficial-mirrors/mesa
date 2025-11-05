@@ -77,6 +77,7 @@ static const struct {
    {_EGL_PLATFORM_X11, "x11"},
    {_EGL_PLATFORM_XCB, "xcb"},
    {_EGL_PLATFORM_WAYLAND, "wayland"},
+   {_EGL_PLATFORM_REDOX, "redox"},
    {_EGL_PLATFORM_DRM, "drm"},
    {_EGL_PLATFORM_ANDROID, "android"},
    {_EGL_PLATFORM_HAIKU, "haiku"},
@@ -598,6 +599,45 @@ _eglGetGbmDisplay(struct gbm_device *native_display,
    return dpy;
 }
 #endif /* HAVE_DRM_PLATFORM */
+
+#ifdef HAVE_REDOX_PLATFORM
+_EGLDisplay *
+_eglGetRedoxDisplay(struct wl_display *native_display,
+                      const EGLAttrib *attrib_list)
+{
+   _EGLDisplay *dpy;
+   _EGLDevice *dev = NULL;
+
+   /* This platform recognizes only EXT_explicit_device */
+   if (attrib_list) {
+      for (int i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+         EGLAttrib attrib = attrib_list[i];
+         EGLAttrib value = attrib_list[i + 1];
+
+         switch (attrib) {
+         case EGL_DEVICE_EXT:
+            dev = _eglLookupDevice((void *)value);
+            if (!dev) {
+               _eglError(EGL_BAD_DEVICE_EXT, "eglGetPlatformDisplay");
+               return NULL;
+            }
+            break;
+
+         default:
+            _eglError(EGL_BAD_ATTRIBUTE, "eglGetPlatformDisplay");
+            return NULL;
+         }
+      }
+   }
+
+   dpy = _eglFindDisplay(_EGL_PLATFORM_REDOX, native_display, attrib_list);
+   if (dpy) {
+      dpy->Device = dev;
+   }
+
+   return dpy;
+}
+#endif /* HAVE_REDOX_PLATFORM */
 
 #ifdef HAVE_WAYLAND_PLATFORM
 _EGLDisplay *

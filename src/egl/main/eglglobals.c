@@ -85,6 +85,10 @@ struct _egl_global _eglGlobal = {
       "EGL_EXT_platform_device"
       " EGL_EXT_explicit_device"
 #endif
+#ifdef HAVE_REDOX_PLATFORM
+      " EGL_EXT_platform_redox"
+      " EGL_KHR_platform_redox"
+#endif
 #ifdef HAVE_WAYLAND_PLATFORM
       " EGL_EXT_platform_wayland"
       " EGL_KHR_platform_wayland"

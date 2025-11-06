@@ -302,29 +302,24 @@ redox_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
     struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
     struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
 
-    // Remnant of debugging, somehow removing this will make 
-    // the screen glitch, probably we need mutex here
-    printf("\n");
+    if (dri2_dpy->kopper) {
+        /* From the EGL 1.4 spec (page 52):
+        *
+        *     "The contents of ancillary buffers are always undefined
+        *      after calling eglSwapBuffers."
+        */
+        dri2_dpy->kopper->swapBuffers(dri2_surf->dri_drawable,
+                            __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+    } else if (!dri2_dpy->flush) {
+        /* aka the swrast path, which does the swap in the gallium driver. */
+        dri2_dpy->core->swapBuffers(dri2_surf->dri_drawable);
+    } else {
+        dri2_flush_drawable_for_swapbuffers(disp, draw);
+    }
 
-      if (dri2_dpy->kopper) {
-      /* From the EGL 1.4 spec (page 52):
-       *
-       *     "The contents of ancillary buffers are always undefined
-       *      after calling eglSwapBuffers."
-       */
-      dri2_dpy->kopper->swapBuffers(dri2_surf->dri_drawable,
-                                    __DRI2_FLUSH_INVALIDATE_ANCILLARY);
-      return EGL_TRUE;
-   } else if (!dri2_dpy->flush) {
-      /* aka the swrast path, which does the swap in the gallium driver. */
-      dri2_dpy->core->swapBuffers(dri2_surf->dri_drawable);
-      return EGL_TRUE;
-   }
-   dri2_flush_drawable_for_swapbuffers(disp, draw);
-
-   if (dri2_surf->orb_window) {
-      orb_window_sync(dri2_surf->orb_window);
-   }
+    if (dri2_surf->orb_window) {
+        orb_window_sync(dri2_surf->orb_window);
+    }
 
     return EGL_TRUE;
 }

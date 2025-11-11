@@ -1151,9 +1151,7 @@ dri2_initialize(_EGLDisplay *disp)
 
    switch (disp->Platform) {
    case _EGL_PLATFORM_SURFACELESS:
-   #if !defined(__redox__)
       ret = dri2_initialize_surfaceless(disp);
-   #endif
       break;
    case _EGL_PLATFORM_DEVICE:
       ret = dri2_initialize_device(disp);

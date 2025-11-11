@@ -406,18 +406,14 @@ static const __DRIextension *loader_extensions_noshm[] = {
    NULL
 };
 
-#if !defined(__redox__)
 extern const __DRIuseInvalidateExtension dri2UseInvalidate;
 extern const __DRIbackgroundCallableExtension driBackgroundCallable;
-#endif
 
 static const __DRIextension *kopper_extensions_noshm[] = {
    &swrastLoaderExtension.base,
    &kopperLoaderExtension.base,
-#if !defined(__redox__)
    &dri2UseInvalidate.base,
    &driBackgroundCallable.base,
-#endif
    NULL
 };
 

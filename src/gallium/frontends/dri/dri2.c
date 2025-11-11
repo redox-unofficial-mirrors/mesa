@@ -28,9 +28,7 @@
  *    <wallbraker@gmail.com> Chia-I Wu <olv@lunarg.com>
  */
 
-#if !defined(__redox__)
 #include <xf86drm.h>
-#endif
 #include "git_sha1.h"
 #include "GL/mesa_glinterop.h"
 #include "GL/internal/mesa_interface.h"

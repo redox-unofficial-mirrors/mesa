@@ -109,12 +109,10 @@ if with_dri2
     'drivers/dri2/platform_device.c',
   )
 
+  files_egl += 'drivers/dri2/platform_surfaceless.c'
   if with_platform_redox
     files_egl += 'drivers/dri2/platform_redox.c'
-  else
-    files_egl += 'drivers/dri2/platform_surfaceless.c'
   endif
-
   if with_platform_x11
     files_egl += files('drivers/dri2/platform_x11.c')
     if with_dri3

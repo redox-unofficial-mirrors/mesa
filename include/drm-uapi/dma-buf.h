@@ -29,6 +29,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#if defined(__redox__)
+#include <sys/ioctl.h>
+#endif
+
 typedef int8_t   __s8;
 typedef uint8_t  __u8;
 typedef int16_t  __s16;

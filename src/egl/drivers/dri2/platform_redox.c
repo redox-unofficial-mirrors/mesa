@@ -80,7 +80,7 @@ redox_query_surface(_EGLDisplay *disp, _EGLSurface *surf, EGLint attribute,
                     EGLint *value)
 {
     struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
-    
+
     switch (attribute) {
     case EGL_WIDTH:
         if (dri2_surf->orb_window) {
@@ -97,7 +97,7 @@ redox_query_surface(_EGLDisplay *disp, _EGLSurface *surf, EGLint attribute,
     default:
         break;
     }
-    
+
     // Fallback
     return _eglQuerySurface(disp, surf, attribute, value);
 }
@@ -208,18 +208,18 @@ dri2_redox_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
                            true, native_window)) {
         goto cleanup_surface;
     }
-    
-    dri2_surf->orb_window = native_window;
+
+    dri2_surf->orb_window = orb_window_from_fd((int)native_window);
     dri2_surf->base.Width = orb_window_width(dri2_surf->orb_window);
     dri2_surf->base.Height = orb_window_height(dri2_surf->orb_window);
-    
+
     config = dri2_get_dri_config(dri2_conf, EGL_WINDOW_BIT, dri2_surf->base.GLColorspace);
     if (!config) {
        _eglError(EGL_BAD_MATCH,
                  "Unsupported surfacetype/colorspace configuration");
        goto cleanup_surface;
     }
-    
+
     if (!dri2_create_drawable(dri2_dpy, config, dri2_surf, dri2_surf)) {
         goto cleanup_surface;
     }
@@ -264,7 +264,7 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
 
     if (copy_width_bytes > dst_stride_bytes - x_offset_bytes)
         copy_width_bytes = dst_stride_bytes - x_offset_bytes;
-    
+
     if (h > dst_window_height - y)
         h = dst_window_height - y;
 
@@ -327,7 +327,7 @@ redox_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
 static EGLint
 redox_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
 {
-    // liborbital does not track buffer age. 
+    // liborbital does not track buffer age.
     return 0;
 }
 
@@ -407,14 +407,14 @@ redox_probe_device_sw(_EGLDisplay *disp)
     }
 
     dri2_dpy->loader_extensions = redox_swrast_loader_extensions;
-    
+
     return true;
 }
 
 static const struct {
-   int format; 
-   int rgba_shifts[4]; 
-   unsigned int rgba_sizes[4]; 
+   int format;
+   int rgba_shifts[4];
+   unsigned int rgba_sizes[4];
 } redox_visuals[] = {
    {
       /* DRM_FORMAT_ARGB8888 (0x34325241) */
@@ -441,11 +441,11 @@ dri2_add_window_configs_for_visuals(_EGLDisplay *disp)
    unsigned int config_count = 0;
 
    for (int i = 0; i < ARRAY_SIZE(redox_visuals); i++) {
-      
+
       for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
-         
+
          const __DRIconfig *dri_conf = dri2_dpy->driver_configs[j];
-         
+
          // Only create configs for 32-bit visuals
         //  if (dri_conf->modes->redMask != 0xFF0000 ||
         //      dri_conf->modes->greenMask != 0x00FF00 ||
@@ -487,12 +487,12 @@ dri2_initialize_redox(_EGLDisplay *disp)
     const char *err;
     bool driver_loaded = false;
     struct dri2_egl_display *dri2_dpy = dri2_display_create();
-    
+
     if (!dri2_dpy) {
         err = "dri2_display_create failed";
         goto cleanup;
     }
-    
+
     disp->DriverData = (void *)dri2_dpy;
 
       driver_loaded = redox_probe_device_sw(disp);
@@ -501,37 +501,37 @@ dri2_initialize_redox(_EGLDisplay *disp)
        err = "DRI2: failed to load driver";
        goto cleanup;
     }
-    
+
     dri2_dpy->fd_display_gpu = dri2_dpy->fd_render_gpu;
 
     if (!dri2_create_screen(disp)) {
        err = "DRI2: failed to create screen";
        goto cleanup;
     }
-    
+
     if (!dri2_setup_extensions(disp)) {
        err = "DRI2: failed to find required DRI extensions";
        goto cleanup;
     }
-    
+
     dri2_setup_screen(disp);
-    
+
     if (!dri2_add_pbuffer_configs_for_visuals(disp)) {
        err = "DRI2: failed to add pbuffer configs";
        goto cleanup;
     }
-    
+
     if (!dri2_add_window_configs_for_visuals(disp)) {
         err = "DRI2: failed to add window configs";
         goto cleanup;
     }
-    
-    disp->Extensions.KHR_image = EGL_TRUE; 
-    disp->Extensions.KHR_partial_update = EGL_FALSE; 
+
+    disp->Extensions.KHR_image = EGL_TRUE;
+    disp->Extensions.KHR_partial_update = EGL_FALSE;
     disp->Extensions.REDOX_image_native_buffer = EGL_TRUE;
-    
+
     dri2_dpy->vtbl = &dri2_redox_display_vtbl;
-    
+
     return EGL_TRUE;
 
 cleanup:

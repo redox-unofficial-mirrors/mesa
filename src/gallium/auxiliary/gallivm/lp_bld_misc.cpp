@@ -562,6 +562,11 @@ lp_build_create_jit_compiler_for_module(LLVMExecutionEngineRef *OutJIT,
 
    JIT = builder.create();
 
+   if (!JIT) {
+      fprintf(stderr, "LLVM: JIT is not available, rerun with 'export GALLIUM_DRIVER=softpipe'\n");
+      fflush(stderr);
+   } else {
+
    if (cache_out) {
       LPObjectCache *objcache = new LPObjectCache(cache_out);
       JIT->setObjectCache(objcache);
@@ -572,7 +577,6 @@ lp_build_create_jit_compiler_for_module(LLVMExecutionEngineRef *OutJIT,
    JITEventListener *JEL = JITEventListener::createIntelJITEventListener();
    JIT->RegisterJITEventListener(JEL);
 #endif
-   if (JIT) {
       *OutJIT = wrap(JIT);
       return 0;
    }

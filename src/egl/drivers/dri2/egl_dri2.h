@@ -331,8 +331,8 @@ struct dri2_egl_surface {
    bool have_fake_front;
 
 #ifdef HAVE_REDOX_PLATFORM
-   __DRIimage *dri_image_back;
    void *orb_window;
+   void *orb_surface;
 #endif
 
 #ifdef HAVE_X11_PLATFORM

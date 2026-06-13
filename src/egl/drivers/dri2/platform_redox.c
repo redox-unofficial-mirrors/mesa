@@ -83,23 +83,15 @@ redox_query_surface(_EGLDisplay *disp, _EGLSurface *surf, EGLint attribute,
 
     switch (attribute) {
     case EGL_WIDTH:
-        if (dri2_surf->orb_window) {
-            *value = orb_window_width(dri2_surf->orb_window);
-            return EGL_TRUE;
-        }
-        break;
+        *value = dri2_surf->base.Width;
+        return EGL_TRUE;
     case EGL_HEIGHT:
-        if (dri2_surf->orb_window) {
-            *value = orb_window_height(dri2_surf->orb_window);
-            return EGL_TRUE;
-        }
-        break;
+        *value = dri2_surf->base.Height;
+        return EGL_TRUE;
     default:
-        break;
+        // Fallback
+        return _eglQuerySurface(disp, surf, attribute, value);
     }
-
-    // Fallback
-    return _eglQuerySurface(disp, surf, attribute, value);
 }
 
 static bool
@@ -128,9 +120,9 @@ dri2_redox_create_surface(_EGLDisplay *disp, EGLint type,
                            false, NULL))
        goto cleanup_surface;
 
-    dri2_surf->orb_window = orb_window_new_flags(-1, -1, dri2_surf->base.Width, dri2_surf->base.Height, "EGL", ORB_WINDOW_ASYNC);
-    if (!dri2_surf->orb_window) {
-        _eglError(EGL_BAD_ALLOC, "Failed to create orbital window");
+    dri2_surf->orb_surface = orb_surface_new(dri2_surf->base.Width, dri2_surf->base.Height, 0);
+    if (!dri2_surf->orb_surface) {
+        _eglError(EGL_BAD_ALLOC, "Failed to create orbital surface");
         goto cleanup_surface;
     }
 
@@ -151,7 +143,7 @@ dri2_redox_create_surface(_EGLDisplay *disp, EGLint type,
     return &dri2_surf->base;
 
 cleanup_orbital:
-    orb_window_destroy(dri2_surf->orb_window);
+    orb_surface_destroy(dri2_surf->orb_surface);
 cleanup_surface:
     free(dri2_surf);
     return NULL;
@@ -169,6 +161,10 @@ redox_destroy_surface(_EGLDisplay *disp, _EGLSurface *surf)
     if (dri2_surf->orb_window) {
         orb_window_destroy(dri2_surf->orb_window);
         dri2_surf->orb_window = NULL;
+    }
+    if (dri2_surf->orb_surface) {
+        orb_surface_destroy(dri2_surf->orb_surface);
+        dri2_surf->orb_surface = NULL;
     }
 
     dri2_fini_surface(surf);
@@ -238,23 +234,37 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
 {
     struct dri2_egl_surface *dri2_surf = loaderPrivate;
 
-    if (op != __DRI_SWRAST_IMAGE_OP_SWAP || !dri2_surf || !dri2_surf->orb_window || !data) {
+    if (op != __DRI_SWRAST_IMAGE_OP_SWAP || !dri2_surf || !data) {
+        return;
+    }
+
+    char *dst_base;
+    int dst_width, dst_height;
+
+    if (dri2_surf->orb_window) {
+        dst_base = (char *)orb_window_data(dri2_surf->orb_window);
+        if (!dst_base) {
+            _eglLog(_EGL_WARNING, "redox_swrast_put_image: orb_window_data() returned NULL!");
+            return;
+        }
+        dst_width = orb_window_width(dri2_surf->orb_window);
+        dst_height = orb_window_height(dri2_surf->orb_window);
+    } else if (dri2_surf->orb_surface) {
+        dst_base = (char *)orb_surface_data(dri2_surf->orb_surface);
+        if (!dst_base) {
+            _eglLog(_EGL_WARNING, "redox_swrast_put_image: orb_window_data() returned NULL!");
+            return;
+        }
+        dst_width = orb_surface_width(dri2_surf->orb_surface);
+        dst_height = orb_surface_height(dri2_surf->orb_surface);
+    } else {
         return;
     }
 
     const int bpp = 4;
-    char *dst_base = (char *)orb_window_data(dri2_surf->orb_window);
-
-    if (!dst_base) {
-        _eglLog(_EGL_WARNING, "redox_swrast_put_image: orb_window_data() returned NULL!");
-        return;
-    }
-
-    int dst_window_width = orb_window_width(dri2_surf->orb_window);
-    int dst_window_height = orb_window_height(dri2_surf->orb_window);
-    int stride =  dst_window_width * 4;
+    int stride =  dst_width * 4;
     int copy_width_bytes = w * bpp;
-    int dst_stride_bytes = dst_window_width * bpp;
+    int dst_stride_bytes = dst_width * bpp;
     int x_offset_bytes = x * bpp;
 
     char *src_line = data;
@@ -265,8 +275,8 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
     if (copy_width_bytes > dst_stride_bytes - x_offset_bytes)
         copy_width_bytes = dst_stride_bytes - x_offset_bytes;
 
-    if (h > dst_window_height - y)
-        h = dst_window_height - y;
+    if (h > dst_height - y)
+        h = dst_height - y;
 
     if (copy_width_bytes <= 0 || h <= 0) {
         return;
@@ -324,11 +334,55 @@ redox_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
     return EGL_TRUE;
 }
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+static EGLBoolean
+redox_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
+                               const EGLint *rects, EGLint n_rects)
+{
+    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
+    void *orb_window = dri2_surf->orb_window; 
+
+    if (!orb_window || n_rects <= 0) {
+        return EGL_TRUE;
+    }
+
+    EGLint min_x = rects[0];
+    EGLint min_y = rects[1];
+    EGLint max_x = rects[0] + rects[2];
+    EGLint max_y = rects[1] + rects[3];
+
+    for (EGLint i = 1; i < n_rects; i++) {
+        EGLint x = rects[i * 4 + 0];
+        EGLint y = rects[i * 4 + 1];
+        EGLint w = rects[i * 4 + 2];
+        EGLint h = rects[i * 4 + 3];
+
+        min_x = MIN(min_x, x);
+        min_y = MIN(min_y, y);
+        max_x = MAX(max_x, x + w);
+        max_y = MAX(max_y, y + h);
+    }
+
+    int32_t unified_w = max_x - min_x;
+    int32_t unified_h = max_y - min_y;
+
+    // this coordinate is flipped
+    int32_t unified_y = draw->Height - max_y;
+    int32_t unified_x = min_x;
+
+    int32_t orb_rect[4] = { unified_x, unified_y, unified_w, unified_h };
+
+    orb_window_update_rects(orb_window, orb_rect, 1);
+    return EGL_TRUE;
+}
+
 static EGLint
 redox_query_buffer_age(_EGLDisplay *disp, _EGLSurface *surface)
 {
-    // liborbital does not track buffer age.
-    return 0;
+    // liborbital buffers always on screen
+    return 1;
 }
 
 static const struct dri2_egl_display_vtbl dri2_redox_display_vtbl = {
@@ -337,6 +391,7 @@ static const struct dri2_egl_display_vtbl dri2_redox_display_vtbl = {
     .destroy_surface = redox_destroy_surface,
     .create_image = dri2_create_image_khr,
     .swap_buffers = redox_swap_buffers,
+    .swap_buffers_with_damage = redox_swap_buffers_with_damage,
     .swap_interval = redox_swap_interval,
     .query_buffer_age = redox_query_buffer_age,
     .query_surface = redox_query_surface,
@@ -527,7 +582,9 @@ dri2_initialize_redox(_EGLDisplay *disp)
     }
 
     disp->Extensions.KHR_image = EGL_TRUE;
-    disp->Extensions.KHR_partial_update = EGL_FALSE;
+    disp->Extensions.EXT_buffer_age = EGL_TRUE;
+    disp->Extensions.KHR_partial_update = EGL_TRUE;
+    disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
     disp->Extensions.REDOX_image_native_buffer = EGL_TRUE;
 
     dri2_dpy->vtbl = &dri2_redox_display_vtbl;

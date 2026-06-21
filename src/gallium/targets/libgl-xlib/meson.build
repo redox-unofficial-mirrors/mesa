@@ -37,7 +37,7 @@ if with_shared_glapi
   gallium_xlib_link_with += libglapi
 endif
 
-libgl = shared_library(
+libgl = library(
   'GL',
   files('xlib.c'),
   include_directories : [

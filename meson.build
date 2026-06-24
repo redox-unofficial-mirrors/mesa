@@ -284,7 +284,7 @@ with_dri = false
 if with_gallium and system_has_kms_drm
   _glx = get_option('glx')
   _egl = get_option('egl')
-  if _glx == 'dri' or _egl.enabled() or (_glx == 'disabled' and _egl.allowed())
+  if _glx == 'dri' or _egl.enabled() or (_glx == 'disabled' and _egl.enabled())
     with_dri = true
   endif
 endif

@@ -213,15 +213,17 @@ dri2_redox_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
     if (!config) {
        _eglError(EGL_BAD_MATCH,
                  "Unsupported surfacetype/colorspace configuration");
-       goto cleanup_surface;
+       goto cleanup_orbital;
     }
 
     if (!dri2_create_drawable(dri2_dpy, config, dri2_surf, dri2_surf)) {
-        goto cleanup_surface;
+        goto cleanup_orbital;
     }
 
     return &dri2_surf->base;
 
+cleanup_orbital:
+    orb_window_destroy(dri2_surf->orb_window);
 cleanup_surface:
     free(dri2_surf);
     return NULL;
@@ -238,8 +240,8 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
         return;
     }
 
-    char *dst_base;
-    int dst_width, dst_height;
+    char *dst_base = NULL;
+    int dst_width = 0, dst_height = 0;
 
     if (dri2_surf->orb_window) {
         dst_base = (char *)orb_window_data(dri2_surf->orb_window);
@@ -257,12 +259,14 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
         }
         dst_width = orb_surface_width(dri2_surf->orb_surface);
         dst_height = orb_surface_height(dri2_surf->orb_surface);
-    } else {
+    }
+
+    if (!dst_base || dst_width <= 0 || dst_height <= 0) {
         return;
     }
 
     const int bpp = 4;
-    int stride =  dst_width * 4;
+    int src_stride_bytes = w * bpp;
     int copy_width_bytes = w * bpp;
     int dst_stride_bytes = dst_width * bpp;
     int x_offset_bytes = x * bpp;
@@ -284,7 +288,7 @@ redox_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
 
     for (; h > 0; h--) {
         memcpy(dst_line, src_line, copy_width_bytes);
-        src_line += stride;
+        src_line += src_stride_bytes;
         dst_line += dst_stride_bytes;
     }
 }
@@ -300,10 +304,16 @@ redox_swrast_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w, int 
         return;
     }
 
+    int cur_w = orb_window_width(dri2_surf->orb_window);
+    int cur_h = orb_window_height(dri2_surf->orb_window);
+
+    dri2_surf->base.Width = cur_w;
+    dri2_surf->base.Height = cur_h;
+
     *x = orb_window_x(dri2_surf->orb_window);
     *y = orb_window_y(dri2_surf->orb_window);
-    *w = orb_window_width(dri2_surf->orb_window);
-    *h = orb_window_height(dri2_surf->orb_window);
+    *w = cur_w;
+    *h = cur_h;
 }
 
 static EGLBoolean
@@ -341,40 +351,54 @@ static EGLBoolean
 redox_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
                                const EGLint *rects, EGLint n_rects)
 {
+    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
     struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
-    void *orb_window = dri2_surf->orb_window; 
+    void *orb_window = dri2_surf->orb_window;
 
-    if (!orb_window || n_rects <= 0) {
+    if (dri2_dpy->kopper) {
+        dri2_dpy->kopper->swapBuffers(dri2_surf->dri_drawable,
+                                      __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+    } else if (!dri2_dpy->flush) {
+        dri2_dpy->core->swapBuffers(dri2_surf->dri_drawable);
+    } else {
+        dri2_flush_drawable_for_swapbuffers(disp, draw);
+    }
+
+    if (!orb_window) {
         return EGL_TRUE;
     }
 
-    EGLint min_x = rects[0];
-    EGLint min_y = rects[1];
-    EGLint max_x = rects[0] + rects[2];
-    EGLint max_y = rects[1] + rects[3];
+    if (n_rects <= 0 || !rects) {
+        orb_window_sync(orb_window);
+        return EGL_TRUE;
+    }
 
-    for (EGLint i = 1; i < n_rects; i++) {
+    int surface_height = orb_window_height(orb_window);
+
+    EGLint *orb_rects = malloc(n_rects * 4 * sizeof(EGLint));
+    if (!orb_rects) {
+        orb_window_sync(orb_window);
+        return EGL_TRUE;
+    }
+
+    for (EGLint i = 0; i < n_rects; i++) {
         EGLint x = rects[i * 4 + 0];
         EGLint y = rects[i * 4 + 1];
         EGLint w = rects[i * 4 + 2];
         EGLint h = rects[i * 4 + 3];
 
-        min_x = MIN(min_x, x);
-        min_y = MIN(min_y, y);
-        max_x = MAX(max_x, x + w);
-        max_y = MAX(max_y, y + h);
+        // this coordinate is flipped
+        EGLint orb_y = surface_height - (y + h);
+
+        orb_rects[i * 4 + 0] = x;
+        orb_rects[i * 4 + 1] = orb_y;
+        orb_rects[i * 4 + 2] = w;
+        orb_rects[i * 4 + 3] = h;
     }
 
-    int32_t unified_w = max_x - min_x;
-    int32_t unified_h = max_y - min_y;
+    orb_window_update_rects(orb_window, orb_rects, n_rects);
+    free(orb_rects);
 
-    // this coordinate is flipped
-    int32_t unified_y = draw->Height - max_y;
-    int32_t unified_x = min_x;
-
-    int32_t orb_rect[4] = { unified_x, unified_y, unified_w, unified_h };
-
-    orb_window_update_rects(orb_window, orb_rect, 1);
     return EGL_TRUE;
 }
 

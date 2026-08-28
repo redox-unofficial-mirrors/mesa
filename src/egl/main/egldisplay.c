@@ -128,6 +128,12 @@ _eglNativePlatformDetectNativeDisplay(void *nativeDisplay)
    if (nativeDisplay == EGL_DEFAULT_DISPLAY)
       return _EGL_INVALID_PLATFORM;
 
+#ifdef HAVE_REDOX_PLATFORM
+   const char *orbital_env = getenv("ORBITAL_DISPLAY");
+   if (orbital_env && orbital_env[0] != '\0')
+      return _EGL_PLATFORM_REDOX;
+#endif
+
 #ifdef HAVE_WINDOWS_PLATFORM
    if (GetObjectType(nativeDisplay) == OBJ_DC)
       return _EGL_PLATFORM_WINDOWS;
